@@ -1,19 +1,22 @@
 import React from 'react';
 import './FaceRecognition.css';
 
-const FaceRecognition = ({ boxes = [], imageUrl, faceData, colorData, generalData }) => {
+const FaceRecognition = ({ boxes = [], imageUrl, faceData, colorData, generalData, onImageLoad }) => {
   const hasResults = (Array.isArray(faceData) ? faceData.length > 0 : !!faceData) || colorData || generalData;
 
   return (
     <div className='center ma'>
       <div className='absolute mt2' style={{ position: 'relative', display: 'inline-block' }}>
-        <img 
-          id='inputimage' 
-          alt='' 
-          src={imageUrl} 
-          width='500px' 
-          height='auto'
-        />
+        {imageUrl && (
+          <img 
+            id='inputimage' 
+            alt='' 
+            src={imageUrl} 
+            width='500px' 
+            height='auto'
+            onLoad={onImageLoad}
+          />
+        )}
         {Array.isArray(boxes) && boxes.map((box, idx) => (
           <div key={idx} className='bounding-box' style={{
             top: box.topRow,

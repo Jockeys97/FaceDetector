@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import Navigation from './Components/Navigation/Navigation';
+import SignIn from './Components/Signin/SignIn';
+import Register from './Components/Register/Register';
 import Logo from './Components/Logo/Logo';
 import ImageLinkForm from './Components/ImageLinkForm/ImageLinkForm';
 import Rank from './Components/Rank/Rank';
@@ -17,19 +19,31 @@ class App extends Component {
       imageUrl: '',
       isLoading: false,
       boxes: [],
+      route: 'signin',
+      isSignedIn: false,
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      },
       facesData: [],
       colorData: [],
       localDataUrl: ''
     };
   }
 
-  componentDidMount() {
-    // Nessun controllo API
-  }
+  // componentDidMount() {
+  //   fetch('http://localhost:3000/')
+  //   .then(response => response.json())
+  //   .then(data => console.log(data))
+  //   .catch(error => console.error('Error:', error));
+  // }
 
   onInputChange = (event) => {
     this.setState({input: event.target.value});
-  }
+  };
 
   onButtonSubmit = async () => {
     const { input } = this.state;
@@ -57,6 +71,7 @@ class App extends Component {
         });
         const facesData = regions.map(r => r.data?.concepts?.[0]).filter(Boolean);
         this.setState({ boxes, facesData });
+        await this.incrementEntries();
       } else {
         this.setState({ boxes: [], facesData: [] });
       }
@@ -65,7 +80,7 @@ class App extends Component {
     } finally {
       this.setState({ isLoading: false });
     }
-  }
+  };
 
   onFileChange = (event) => {
     const file = event.target.files && event.target.files[0];
@@ -76,7 +91,26 @@ class App extends Component {
       this.setState({ localDataUrl: dataUrl, imageUrl: dataUrl, boxes: [], facesData: [] });
     };
     reader.readAsDataURL(file);
-  }
+  };
+
+  incrementEntries = async () => {
+    const { user } = this.state;
+    if (!user || !user.id) return;
+    try {
+      const response = await fetch('http://localhost:3000/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id })
+      });
+      if (!response.ok) return;
+      const count = await response.json().catch(() => null);
+      if (typeof count === 'number') {
+        this.setState(prev => ({ user: { ...prev.user, entries: count } }));
+      }
+    } catch (error) {
+      console.error('Errore aggiornamento entries:', error);
+    }
+  };
 
   onLocalDetect = async () => {
     const { localDataUrl } = this.state;
@@ -106,6 +140,7 @@ class App extends Component {
         });
         const facesData = regions.map(r => r.data?.concepts?.[0]).filter(Boolean);
         this.setState({ boxes, facesData });
+        await this.incrementEntries();
       } else {
         this.setState({ boxes: [], facesData: [] });
       }
@@ -114,8 +149,30 @@ class App extends Component {
     } finally {
       this.setState({ isLoading: false });
     }
-  }
-  
+  };
+
+  loadUser = (user) => {
+    this.setState({
+      user: {
+        id: user?.id || '',
+        name: user?.name || '',
+        email: user?.email || '',
+        entries: user?.entries ?? '',
+        joined: user?.joined || ''
+      }
+    });
+  };
+
+  onRouteChange = (route) => {
+    if (route === 'signin' || route === 'register') {
+      this.setState({ isSignedIn: false });
+    } else if (route === 'home') {
+      this.setState({ isSignedIn: true });
+    }
+    this.setState({ route });
+  };
+
+
   render() {
     const { isLoading, localDataUrl } = this.state;
 
@@ -135,19 +192,28 @@ class App extends Component {
           <span className='particle'></span>
           <span className='particle'></span>
         </div>
-        <Navigation />
-        <Logo />
-        <Rank />
-        
-        <ImageLinkForm 
-          onInputChange={this.onInputChange}
-          onButtonSubmit={this.onButtonSubmit}
-          onFileChange={this.onFileChange}
-          onLocalDetect={this.onLocalDetect}
-          hasLocalFile={!!localDataUrl}
-          isLoading={isLoading}
-        />
-        <FaceRecognition boxes={this.state.boxes} imageUrl={this.state.imageUrl} faceData={this.state.facesData} colorData={this.state.colorData} />
+        <Navigation onRouteChange={this.onRouteChange} isSignedIn={this.state.isSignedIn} />
+        {this.state.route === 'signin' && (
+          <SignIn onRouteChange={this.onRouteChange} loadUser={this.loadUser} />
+        )}
+        {this.state.route === 'register' && (
+          <Register onRouteChange={this.onRouteChange} loadUser={this.loadUser} />
+        )}
+        {this.state.route === 'home' && (
+          <>
+            <Logo />
+            <Rank name={this.state.user.name} entries={this.state.user.entries} />
+            <ImageLinkForm 
+              onInputChange={this.onInputChange}
+              onButtonSubmit={this.onButtonSubmit}
+              onFileChange={this.onFileChange}
+              onLocalDetect={this.onLocalDetect}
+              hasLocalFile={!!localDataUrl}
+              isLoading={isLoading}
+            />
+            <FaceRecognition boxes={this.state.boxes} imageUrl={this.state.imageUrl} faceData={this.state.facesData} colorData={this.state.colorData} />
+          </>
+        )}
       </div>
     );
   }
