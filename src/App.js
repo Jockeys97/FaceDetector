@@ -10,6 +10,7 @@ import Rank from './Components/Rank/Rank';
 import './App.css';
 import FaceRecognition from './Components/FaceRecognition/FaceRecognition';
 import { detectFaces, detectFacesBase64, recognizeColors, recognizeColorsBase64 } from './services/apiService';
+import { BACKEND_BASE_URL } from './config/api';
 
 class App extends Component {
   constructor() {
@@ -97,15 +98,33 @@ class App extends Component {
     const { user } = this.state;
     if (!user || !user.id) return;
     try {
-      const response = await fetch('http://localhost:3000/image', {
-        method: 'POST',
+      const response = await fetch(`${BACKEND_BASE_URL}/image`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: user.id })
       });
       if (!response.ok) return;
-      const count = await response.json().catch(() => null);
-      if (typeof count === 'number') {
-        this.setState(prev => ({ user: { ...prev.user, entries: count } }));
+      const data = await response.json().catch(() => null);
+
+      let nextEntries = null;
+      if (typeof data === 'number') {
+        nextEntries = data;
+      } else if (typeof data === 'string' && !isNaN(Number(data))) {
+        nextEntries = Number(data);
+      } else if (data && typeof data === 'object') {
+        if (typeof data.entries === 'number') nextEntries = data.entries;
+        else if (typeof data.entries === 'string' && !isNaN(Number(data.entries))) nextEntries = Number(data.entries);
+        else if (Array.isArray(data) && data.length) {
+          const first = data[0];
+          if (typeof first === 'number') nextEntries = first;
+          else if (first && (typeof first.entries === 'number' || (typeof first.entries === 'string' && !isNaN(Number(first.entries))))) {
+            nextEntries = Number(first.entries);
+          }
+        }
+      }
+
+      if (typeof nextEntries === 'number' && !Number.isNaN(nextEntries)) {
+        this.setState(prev => ({ user: { ...prev.user, entries: nextEntries } }));
       }
     } catch (error) {
       console.error('Errore aggiornamento entries:', error);

@@ -20,7 +20,7 @@ class SignIn extends React.Component {
      
     onSubmitSignIn = async () => {
         const { SignInEmail, SignInPassword } = this.state;
-        const email = (SignInEmail || '').trim();
+        const email = (SignInEmail || '').trim().toLowerCase();
         const password = (SignInPassword || '').trim();
         if (!email || !password) {
             this.setState({ error: 'Inserisci email e password' });
