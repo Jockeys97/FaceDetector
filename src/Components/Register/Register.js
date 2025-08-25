@@ -1,4 +1,5 @@
 import React from "react";
+import { BACKEND_BASE_URL } from "../../config/api";
 
 class Register extends React.Component {
 
@@ -28,7 +29,7 @@ class Register extends React.Component {
     onSubmitRegister = async () => {
         const { name, email, password } = this.state;
         const trimmedName = (name || '').trim();
-        const trimmedEmail = (email || '').trim();
+        const trimmedEmail = (email || '').trim().toLowerCase();
         const trimmedPassword = (password || '').trim();
 
         if (!trimmedName || !trimmedEmail || !trimmedPassword) {

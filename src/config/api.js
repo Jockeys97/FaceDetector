@@ -26,6 +26,9 @@ export const API_BASE_URL = process.env.NODE_ENV === 'development'
   ? '/api/clarifai/v2'
   : 'https://api.clarifai.com/v2';
 
+// Backend locale (Express) — usa REACT_APP_BACKEND_BASE per override
+export const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_BASE || 'http://localhost:3000';
+
 export const buildApiUrl = (modelId, versionId) => {
   return `${API_BASE_URL}/models/${modelId}/versions/${versionId}/outputs`;
 };
